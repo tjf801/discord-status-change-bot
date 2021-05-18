@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-TIME_DIFF: datetime.timedelta = datetime.timedelta(hours=2)
+TIME_DIFF: datetime.timedelta = datetime.timedelta(hours=1)
+OFFSET: datetime.timedelta = datetime.timedelta()
 
 client = discord.Client()
 
@@ -37,7 +38,7 @@ async def delay_status_update():
 		now = datetime.datetime.now()
 		this_morning = now.replace(hour=0,minute=0,second=0,microsecond=0)
 		
-		i = this_morning
+		i = this_morning + OFFSET
 		while i < now:
 			i += time_difference
 		
