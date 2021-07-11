@@ -7,11 +7,11 @@ from discord.ext import tasks
 from dotenv import load_dotenv
 
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-TIME_DIFF: datetime.timedelta = datetime.timedelta(hours=1)
-OFFSET: datetime.timedelta = datetime.timedelta()
+TOKEN: str = os.getenv('DISCORD_TOKEN')
+TIME_DIFF: datetime.timedelta = datetime.timedelta(hours=4)
+OFFSET: datetime.timedelta = datetime.timedelta(hours=2)
 
-client = discord.Client()
+client: discord.Client = discord.Client()
 
 def log(*args: str, **kwargs):
 	# literally just a print() but with a date and time marker
@@ -23,11 +23,10 @@ async def on_ready():
 	update_status.start()
 	log(f"started task")
 
-@tasks.loop(hours=TIME_DIFF.seconds%86400//3600, minutes=TIME_DIFF.seconds%3600//60, seconds=TIME_DIFF.seconds%60) #i think this math *should* work here
+@tasks.loop(seconds=TIME_DIFF.seconds)
 async def update_status():
 	with open("./discord_statuses.txt", "r+", encoding='utf8') as f:
-		lines = f.readlines()
-		line = random.choice(lines)
+		line: str = random.choice(f.readlines())
 		await client.change_presence(activity=discord.Activity(type=4, state=line[:-1][:128], name="this isnt actually used"))
 		log(f"set status to '{line[:-1][:128]}'")
 
@@ -35,18 +34,18 @@ async def update_status():
 async def delay_status_update():
 	# waits until the next multiple of time_difference
 	def get_time_to_wait_until(time_difference: datetime.timedelta) -> datetime.datetime:
-		now = datetime.datetime.now()
-		this_morning = now.replace(hour=0,minute=0,second=0,microsecond=0)
+		now: datetime.datetime = datetime.datetime.now()
+		this_morning: datetime.datetime = now.replace(hour=0,minute=0,second=0,microsecond=0)
 		
-		i = this_morning + OFFSET
+		i: datetime.datetime = this_morning + OFFSET
 		while i < now:
 			i += time_difference
 		
 		return i
 	
-	seconds_to_wait = (get_time_to_wait_until(TIME_DIFF)-datetime.datetime.now()).seconds
+	seconds_to_wait: int = (get_time_to_wait_until(TIME_DIFF)-datetime.datetime.now()).seconds
 	
-	log(f"waiting {seconds_to_wait} seconds until first satus change")
+	log(f"waiting {seconds_to_wait} seconds until first status change")
 	
 	await asyncio.sleep(seconds_to_wait)
 
