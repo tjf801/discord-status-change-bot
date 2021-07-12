@@ -32,6 +32,8 @@ async def update_status():
 
 @update_status.before_loop
 async def delay_status_update():
+	await update_status()
+	
 	# waits until the next multiple of time_difference
 	def get_time_to_wait_until(time_difference: datetime.timedelta) -> datetime.datetime:
 		now: datetime.datetime = datetime.datetime.now()
@@ -45,7 +47,7 @@ async def delay_status_update():
 	
 	seconds_to_wait: int = (get_time_to_wait_until(TIME_DIFF)-datetime.datetime.now()).seconds
 	
-	log(f"waiting {seconds_to_wait} seconds until first status change")
+	log(f"waiting {seconds_to_wait} seconds until next status change")
 	
 	await asyncio.sleep(seconds_to_wait)
 
