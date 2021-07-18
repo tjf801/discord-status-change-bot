@@ -49,6 +49,6 @@ async def delay_status_update():
 	
 	log(f"waiting {seconds_to_wait} seconds until next status change")
 	
-	await asyncio.sleep(seconds_to_wait)
+	await asyncio.sleep(seconds_to_wait+1)
 
 client.run(TOKEN, bot=False)
