@@ -20,8 +20,9 @@ def log(*args: str, **kwargs):
 @client.event
 async def on_ready():
 	log(f'{client.user} has connected to Discord!')
-	update_status.start()
-	log(f"started task")
+	if not update_status.is_running():
+		update_status.start()
+		log(f"started task")
 
 @tasks.loop(seconds=TIME_DIFF.seconds)
 async def update_status():
