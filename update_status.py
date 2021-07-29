@@ -20,6 +20,7 @@ def log(*args: str, **kwargs):
 @client.event
 async def on_ready():
 	log(f'{client.user} has connected to Discord!')
+	await update_status()
 	if not update_status.is_running():
 		update_status.start()
 		log(f"started task")
@@ -33,8 +34,6 @@ async def update_status():
 
 @update_status.before_loop
 async def delay_status_update():
-	await update_status()
-	
 	# waits until the next multiple of time_difference
 	def get_time_to_wait_until(time_difference: datetime.timedelta) -> datetime.datetime:
 		now: datetime.datetime = datetime.datetime.now()
