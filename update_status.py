@@ -3,6 +3,7 @@ import os
 import discord
 import datetime
 import random
+import threading
 from discord.ext import tasks
 from dotenv import load_dotenv
 
@@ -17,18 +18,27 @@ def log(*args: str, **kwargs):
 	# literally just a print() but with a date and time marker
 	print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]:", *args, **kwargs)
 
+async def update_status_on_input():
+	while True: await update_status(input("\r"))
+
+input_thread = threading.Thread(target=asyncio.run, args=(update_status_on_input(),))
+
 @client.event
 async def on_ready():
 	log(f'{client.user} has connected to Discord!')
 	await update_status()
+	if not input_thread.is_alive(): input_thread.start()
 	if not update_status.is_running():
 		update_status.start()
 		log(f"started task")
 
 @tasks.loop(seconds=TIME_DIFF.seconds)
-async def update_status():
+async def update_status(status: str = None):
 	with open("./discord_statuses.txt", "r+", encoding='utf8') as f:
-		line: str = random.choice(f.readlines())
+		if status is None: line: str = random.choice(f.readlines())
+		else:
+			try: line: str = random.choice(list(filter(lambda x: status.lower() in x.lower(), f.readlines())))
+			except IndexError: return print(f"status with '{status}' not found")
 		await client.change_presence(activity=discord.Activity(type=4, state=line[:-1][:128], name="this isnt actually used"))
 		log(f"set status to '{line[:-1][:128]}'")
 
