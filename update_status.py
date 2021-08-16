@@ -43,8 +43,8 @@ async def update_status(status: str = None, is_regex: bool = False):
 			else:
 				try: regex = re.compile(status)
 				except re.error: return print(f"invalid regex expression '{status}'")
-				lines = list(filter(lambda x: regex.match(x) is not None, f.readlines()))
-			if len(lines) == 0: raise ValueError(f"status with '{status}' not found")
+				lines = list(filter(lambda x: regex.search(x) is not None, f.readlines()))
+			if len(lines) == 0: return print(f"status with '{status}' not found")
 			line: str = random.choice(list(lines))
 		await client.change_presence(activity=discord.Activity(type=4, state=line[:-1][:128], name="this isnt actually used"))
 		log(f"set status to '{line[:-1][:128]}'")
