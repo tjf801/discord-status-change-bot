@@ -3,6 +3,7 @@ import os
 import discord
 import datetime
 import random
+import re
 import threading
 from discord.ext import tasks
 from dotenv import load_dotenv
@@ -19,7 +20,7 @@ def log(*args: str, **kwargs):
 	print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]:", *args, **kwargs)
 
 async def update_status_on_input():
-	while True: await update_status(input("\r"))
+	while True: await update_status(input("\r"), is_regex=True)
 
 input_thread = threading.Thread(target=asyncio.run, args=(update_status_on_input(),))
 
@@ -33,12 +34,18 @@ async def on_ready():
 		log(f"started task")
 
 @tasks.loop(seconds=TIME_DIFF.seconds)
-async def update_status(status: str = None):
+async def update_status(status: str = None, is_regex: bool = False):
 	with open("./discord_statuses.txt", "r+", encoding='utf8') as f:
 		if status is None: line: str = random.choice(f.readlines())
 		else:
-			try: line: str = random.choice(list(filter(lambda x: status.lower() in x.lower(), f.readlines())))
-			except IndexError: return print(f"status with '{status}' not found")
+			if not is_regex:
+				lines = list(filter(lambda x: status.lower() in x.lower(), f.readlines()))
+			else:
+				try: regex = re.compile(status)
+				except re.error: return print(f"invalid regex expression '{status}'")
+				lines = list(filter(lambda x: regex.match(x) is not None, f.readlines()))
+			if len(lines) == 0: raise ValueError(f"status with '{status}' not found")
+			line: str = random.choice(list(lines))
 		await client.change_presence(activity=discord.Activity(type=4, state=line[:-1][:128], name="this isnt actually used"))
 		log(f"set status to '{line[:-1][:128]}'")
 
