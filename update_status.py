@@ -48,6 +48,8 @@ async def update_status(status: str = None, is_regex: bool = False):
 			line: str = random.choice(list(lines))
 		
 		#TODO: test all of these more
+		#TODO: use state variable in all these?
+		#TODO: add more command options
 		if line[0] == '!':
 			command = line.split(' ')[0]
 			if command=="!playing":
@@ -67,10 +69,14 @@ async def update_status(status: str = None, is_regex: bool = False):
 				show_name = line[9:-1][:128].lstrip()
 				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=show_name), afk=True)
 				log(f"set status to Watching '{show_name}'")
+			elif command=="!competing":
+				event_name = line[10:-1][:128].lstrip()
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.competing, name=event_name), afk=True)
+				log(f"set status to Competing in '{event_name}'")
 			else:
 				raise NameError(f"unknown command {command}")
 		else:
-			await client.change_presence(activity=discord.Activity(type=discord.ActivityType.custom, state=line[:-1][:128], name="not used"), afk=True)
+			await client.change_presence(activity=discord.Activity(type=discord.ActivityType.custom, state=line[:-1][:128], name=None), afk=True)
 			log(f"set status to '{line[:-1][:128]}'")
 
 @update_status.before_loop
