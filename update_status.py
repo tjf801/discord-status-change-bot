@@ -46,8 +46,32 @@ async def update_status(status: str = None, is_regex: bool = False):
 				lines = list(filter(lambda x: regex.search(x) is not None, f.readlines()))
 			if len(lines) == 0: return print(f"status with '{status}' not found")
 			line: str = random.choice(list(lines))
-		await client.change_presence(activity=discord.Activity(type=4, state=line[:-1][:128], name="this isnt actually used"))
-		log(f"set status to '{line[:-1][:128]}'")
+		
+		#TODO: test all of these more
+		if line[0] == '!':
+			command = line.split(' ')[0]
+			if command=="!playing":
+				game_name = line[8:-1][:128].lstrip()
+				await client.change_presence(activity=discord.Game(start=datetime.datetime.now(), name=game_name), afk=True)
+				log(f"set status to Playing '{game_name}'")
+			elif command=="!streaming":
+				stream_url = line.split(' ')[1]
+				stream_name = ' '.join(line.split(' ')[2:])[:-1]
+				await client.change_presence(activity=discord.Streaming(start=datetime.datetime.now(), name=stream_name, url=stream_url), afk=True)
+				log(f"set status to Streaming '{stream_name}' at {stream_url}")
+			elif command=="!listening":
+				song_name = line[10:-1][:128].lstrip()
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=song_name), afk=True)
+				log(f"set status to Listening to '{song_name}'")
+			elif command=="!watching":
+				show_name = line[9:-1][:128].lstrip()
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=show_name), afk=True)
+				log(f"set status to Watching '{show_name}'")
+			else:
+				raise NameError(f"unknown command {command}")
+		else:
+			await client.change_presence(activity=discord.Activity(type=discord.ActivityType.custom, state=line[:-1][:128], name="not used"), afk=True)
+			log(f"set status to '{line[:-1][:128]}'")
 
 @update_status.before_loop
 async def delay_status_update():
