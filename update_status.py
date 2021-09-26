@@ -42,41 +42,41 @@ async def update_status(status: str = None, is_regex: bool = False):
 				lines = list(filter(lambda x: status.lower() in x.lower(), f.readlines()))
 			else:
 				try: regex = re.compile(status)
-				except re.error: return print(f"invalid regex expression '{status}'")
+				except re.error: return print(f"\033[31minvalid regex expression '\033[36m{status}\033[31m'\033[00m")
 				lines = list(filter(lambda x: regex.search(x) is not None, f.readlines()))
-			if len(lines) == 0: return print(f"status with '{status}' not found")
+			if len(lines) == 0: return print(f"\033[31mstatus with '\033[36m{status}\033[31m' not found\033[00m")
 			line: str = random.choice(list(lines))
 		
 		#TODO: test all of these more
 		#TODO: use state variable in all these?
-		#TODO: add more command options
+		#TODO: add command options
 		if line[0] == '!':
-			command = line.split(' ')[0]
-			if command=="!playing":
-				game_name = line[8:-1][:128].lstrip()
-				await client.change_presence(activity=discord.Game(start=datetime.datetime.now(), name=game_name), afk=True)
-				log(f"set status to Playing '{game_name}'")
-			elif command=="!streaming":
-				stream_url = line.split(' ')[1]
-				stream_name = ' '.join(line.split(' ')[2:])[:-1]
+			command, text = line[1:].split(' ', 1)
+			text = text.rstrip()
+			
+			if command=="playing":
+				await client.change_presence(activity=discord.Game(start=datetime.datetime.now(), name=text), afk=True)
+				log(f"set status to Playing '{text}'")
+			elif command=="streaming":
+				stream_url = text.split(' ')[0]
+				stream_name = text[len(stream_url):]
 				await client.change_presence(activity=discord.Streaming(start=datetime.datetime.now(), name=stream_name, url=stream_url), afk=True)
 				log(f"set status to Streaming '{stream_name}' at {stream_url}")
-			elif command=="!listening":
-				song_name = line[10:-1][:128].lstrip()
-				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=song_name), afk=True)
-				log(f"set status to Listening to '{song_name}'")
-			elif command=="!watching":
-				show_name = line[9:-1][:128].lstrip()
-				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=show_name), afk=True)
-				log(f"set status to Watching '{show_name}'")
-			elif command=="!competing":
-				event_name = line[10:-1][:128].lstrip()
-				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.competing, name=event_name), afk=True)
-				log(f"set status to Competing in '{event_name}'")
+			elif command=="listening":
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=text), afk=True)
+				log(f"set status to Listening to '{text}'")
+			elif command=="watching":
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=text), afk=True)
+				log(f"set status to Watching '{text}'")
+			elif command=="competing":
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.competing, name=text), afk=True)
+				log(f"set status to Competing in '{text}'")
 			else:
-				raise NameError(f"unknown command {command}")
+				raise NameError(f"\033[31munknown command \033[36m{command}\033[00m")
 		else:
-			await client.change_presence(activity=discord.Activity(type=discord.ActivityType.custom, state=line[:-1][:128], name=None), afk=True)
+			#NOTE: why the FUCK does discord.py need `name` to be a non-empty string specifically
+			#AGHHHHHHHHH i hate this api
+			await client.change_presence(activity=discord.Activity(type=discord.ActivityType.custom, state=line[:-1][:128], name="this is not used"), afk=True)
 			log(f"set status to '{line[:-1][:128]}'")
 
 @update_status.before_loop
