@@ -33,6 +33,33 @@ async def on_ready():
 		update_status.start()
 		log(f"started task")
 
+async def parse_command(raw_command_text: str):
+	command, text = raw_command_text[1:].split(' ', 1)
+	text = text.rstrip()
+	
+	#TODO: test all of these more
+	#TODO: use state variable in all these?
+	#TODO: add command options
+	if command=="playing":
+		await client.change_presence(activity=discord.Game(start=datetime.datetime.now(), name=text), afk=True)
+		log(f"set status to Playing '{text}'")
+	elif command=="streaming":
+		stream_url = text.split(' ')[0]
+		stream_name = text[len(stream_url):]
+		await client.change_presence(activity=discord.Streaming(start=datetime.datetime.now(), name=stream_name, url=stream_url), afk=True)
+		log(f"set status to Streaming '{stream_name}' at {stream_url}")
+	elif command=="listening":
+		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=text), afk=True)
+		log(f"set status to Listening to '{text}'")
+	elif command=="watching":
+		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=text), afk=True)
+		log(f"set status to Watching '{text}'")
+	elif command=="competing":
+		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.competing, name=text), afk=True)
+		log(f"set status to Competing in '{text}'")
+	else:
+		raise NameError(f"\033[31munknown command \033[36m{command}\033[00m")
+
 @tasks.loop(seconds=TIME_DIFF.seconds)
 async def update_status(status: str = None, is_regex: bool = False):
 	with open("./discord_statuses.txt", "r+", encoding='utf8') as f:
@@ -47,32 +74,7 @@ async def update_status(status: str = None, is_regex: bool = False):
 			if len(lines) == 0: return print(f"\033[31mstatus with '\033[36m{status}\033[31m' not found\033[00m")
 			line: str = random.choice(list(lines))
 		
-		#TODO: test all of these more
-		#TODO: use state variable in all these?
-		#TODO: add command options
-		if line[0] == '!':
-			command, text = line[1:].split(' ', 1)
-			text = text.rstrip()
-			
-			if command=="playing":
-				await client.change_presence(activity=discord.Game(start=datetime.datetime.now(), name=text), afk=True)
-				log(f"set status to Playing '{text}'")
-			elif command=="streaming":
-				stream_url = text.split(' ')[0]
-				stream_name = text[len(stream_url):]
-				await client.change_presence(activity=discord.Streaming(start=datetime.datetime.now(), name=stream_name, url=stream_url), afk=True)
-				log(f"set status to Streaming '{stream_name}' at {stream_url}")
-			elif command=="listening":
-				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=text), afk=True)
-				log(f"set status to Listening to '{text}'")
-			elif command=="watching":
-				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=text), afk=True)
-				log(f"set status to Watching '{text}'")
-			elif command=="competing":
-				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.competing, name=text), afk=True)
-				log(f"set status to Competing in '{text}'")
-			else:
-				raise NameError(f"\033[31munknown command \033[36m{command}\033[00m")
+		if line[0] == '!': await parse_command(line)
 		else:
 			#NOTE: why the FUCK does discord.py need `name` to be a non-empty string specifically
 			#AGHHHHHHHHH i hate this api
