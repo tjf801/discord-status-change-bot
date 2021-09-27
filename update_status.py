@@ -2,6 +2,7 @@ import asyncio
 import os
 import discord
 import datetime
+import json
 import random
 import re
 import threading
@@ -34,31 +35,43 @@ async def on_ready():
 		log(f"started task")
 
 async def parse_command(raw_command_text: str):
-	command, text = raw_command_text[1:].split(' ', 1)
-	text = text.rstrip()
+	assert raw_command_text[0] == '!'
 	
-	#TODO: test all of these more
-	#TODO: use state variable in all these?
-	#TODO: add command options
+	command, args, text = re.match("!([a-zA-Z]+)?(\{.*\})? ?(.*)\n", raw_command_text).groups()
+	
+	default_args = {"name": text, "start": datetime.datetime.now()}
+	command_args = {**default_args, **(eval(args) if args is not None else {})}
+	
+	activity = None
+	
 	if command=="playing":
-		await client.change_presence(activity=discord.Game(start=datetime.datetime.now(), name=text), afk=True)
+		activity = discord.Game(**command_args)
 		log(f"set status to Playing '{text}'")
+	
 	elif command=="streaming":
-		stream_url = text.split(' ')[0]
-		stream_name = text[len(stream_url):]
-		await client.change_presence(activity=discord.Streaming(start=datetime.datetime.now(), name=stream_name, url=stream_url), afk=True)
-		log(f"set status to Streaming '{stream_name}' at {stream_url}")
+		activity = discord.Streaming(**command_args)
+		log(f"set status to Streaming '{text}' at {command_args['url']}")
+	
 	elif command=="listening":
-		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=text), afk=True)
+		activity = discord.Activity(type=discord.ActivityType.listening, **command_args)
 		log(f"set status to Listening to '{text}'")
+	
 	elif command=="watching":
-		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=text), afk=True)
+		activity = discord.Activity(type=discord.ActivityType.watching, **command_args)
 		log(f"set status to Watching '{text}'")
+	
 	elif command=="competing":
-		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.competing, name=text), afk=True)
+		activity = discord.Activity(type=discord.ActivityType.competing, **command_args)
 		log(f"set status to Competing in '{text}'")
-	else:
-		raise NameError(f"\033[31munknown command \033[36m{command}\033[00m")
+	
+	elif command is None:
+		custom_args = {"state": default_args['name'], **command_args, "name": "not used"}
+		activity = discord.Activity(type=discord.ActivityType.custom, **custom_args)
+		log(f"set status to '{custom_args['state'][:128]}'")
+	
+	else: raise NameError(f"\033[31munknown command \033[36m{command}\033[00m")
+	
+	await client.change_presence(activity=activity, afk=True)
 
 @tasks.loop(seconds=TIME_DIFF.seconds)
 async def update_status(status: str = None, is_regex: bool = False):
