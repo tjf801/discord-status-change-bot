@@ -64,6 +64,11 @@ async def parse_command(raw_command_text: str):
 		activity = discord.Activity(type=discord.ActivityType.competing, **command_args)
 		log(f"set status to Competing in '{text}'")
 	
+	elif command=='py':
+		custom_args = {"state": eval(text), **command_args, "name": "not used"}
+		activity = discord.Activity(type=discord.ActivityType.custom, **custom_args)
+		log(f"set status to '{custom_args['state'][:128]}'")
+	
 	elif command is None:
 		custom_args = {"state": default_args['name'], **command_args, "name": "not used"}
 		activity = discord.Activity(type=discord.ActivityType.custom, **custom_args)
