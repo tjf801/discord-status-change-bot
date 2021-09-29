@@ -101,10 +101,8 @@ async def update_status(status: str = None, is_regex: bool = False):
 
 @update_status.before_loop
 async def delay_status_update():
-	from datetime import datetime, timedelta
-	
 	# waits until the next multiple of time_difference
-	def get_time_to_wait_until(time_difference: timedelta) -> datetime:
+	def get_time_to_wait_until(time_difference: datetime.timedelta) -> datetime.datetime:
 		now: datetime = datetime.datetime.now()
 		day_start: datetime = now.replace(hour=0, minute=0, second=0, microsecond=0)
 		
